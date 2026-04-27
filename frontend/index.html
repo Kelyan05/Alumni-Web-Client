@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>University Analytics Dashboard</title>
+  <link rel="stylesheet" href="css/style.css">
+  <!-- Chart.js for all visualisations -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <!-- html2canvas for chart image export -->
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+</head>
+<body>
+
+  <!-- ============================================================
+       SIDEBAR NAVIGATION
+  ============================================================ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <h1 class="logo">📊 UniAnalytics</h1>
+      <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">☰</button>
+    </div>
+
+    <nav class="nav">
+      <a href="#" class="nav-link active" data-section="overview">
+        <span class="nav-icon">🏠</span> Overview
+      </a>
+      <a href="#" class="nav-link" data-section="skills-gap">
+        <span class="nav-icon">🎯</span> Skills Gap
+      </a>
+      <a href="#" class="nav-link" data-section="career-pathways">
+        <span class="nav-icon">🗺️</span> Career Pathways
+      </a>
+      <a href="#" class="nav-link" data-section="certifications">
+        <span class="nav-icon">📜</span> Certifications
+      </a>
+      <a href="#" class="nav-link" data-section="alumni">
+        <span class="nav-icon">👥</span> Alumni Directory
+      </a>
+      <a href="#" class="nav-link" data-section="api-keys">
+        <span class="nav-icon">🔑</span> API Keys
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-info" id="userInfo">Not logged in</div>
+      <button class="btn btn-outline" id="logoutBtn" style="display:none">Logout</button>
+    </div>
+  </aside>
+
+  <!-- ============================================================
+       MAIN CONTENT
+  ============================================================ -->
+  <main class="main" id="main">
+
+    <!-- ---- LOGIN MODAL ---- -->
+    <div class="modal-overlay" id="loginModal">
+      <div class="modal">
+        <h2>Dashboard Login</h2>
+        <p class="modal-subtitle">University Analytics Portal</p>
+
+        <div id="loginError" class="alert alert-error" style="display:none"></div>
+
+        <div class="form-group">
+          <label for="loginEmail">Email</label>
+          <input type="email" id="loginEmail" placeholder="you@university.ac.uk" required>
+        </div>
+        <div class="form-group">
+          <label for="loginPassword">Password</label>
+          <input type="password" id="loginPassword" placeholder="Password" required>
+        </div>
+        <button class="btn btn-primary btn-full" id="loginBtn">Login</button>
+
+        <p class="modal-footer-text">
+          <a href="#" id="showRegister">Create account</a> ·
+          <a href="#" id="showForgot">Forgot password?</a>
+        </p>
+      </div>
+    </div>
+
+    <!-- ---- REGISTER MODAL ---- -->
+    <div class="modal-overlay" id="registerModal" style="display:none">
+      <div class="modal">
+        <h2>Create Account</h2>
+        <div id="registerError" class="alert alert-error" style="display:none"></div>
+        <div id="registerSuccess" class="alert alert-success" style="display:none"></div>
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" id="regName" placeholder="Dr. Jane Smith" required>
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="regEmail" placeholder="you@university.ac.uk" required>
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="regPassword" placeholder="Min 8 chars, uppercase, number, symbol">
+          <small class="form-hint">Min 8 characters, 1 uppercase, 1 number, 1 special character</small>
+        </div>
+        <button class="btn btn-primary btn-full" id="registerBtn">Register</button>
+        <p class="modal-footer-text"><a href="#" id="showLogin">Back to login</a></p>
+      </div>
+    </div>
+
+    <!-- ---- DASHBOARD (shown after login) ---- -->
+    <div id="dashboard" style="display:none">
+
+      <!-- Top bar -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <h2 class="page-title" id="pageTitle">Overview</h2>
+        </div>
+        <div class="topbar-right">
+          <button class="btn btn-outline" id="exportCsvBtn">⬇ Export CSV</button>
+          <button class="btn btn-outline" id="exportChartBtn">🖼 Export Charts</button>
+        </div>
+      </header>
+
+      <!-- ======================== OVERVIEW SECTION ======================== -->
+      <section id="section-overview" class="content-section">
+
+        <!-- KPI Cards -->
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-icon">👥</div>
+            <div class="kpi-value" id="kpiAlumni">—</div>
+            <div class="kpi-label">Total Alumni</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon">📜</div>
+            <div class="kpi-value" id="kpiCerts">—</div>
+            <div class="kpi-label">Post-Grad Certifications</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon">🎯</div>
+            <div class="kpi-value" id="kpiSkills">—</div>
+            <div class="kpi-label">Skills Gaps Identified</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon">🎓</div>
+            <div class="kpi-value" id="kpiProgrammes">—</div>
+            <div class="kpi-label">Programmes Tracked</div>
+          </div>
+        </div>
+
+        <!-- Charts row 1 -->
+        <div class="chart-grid">
+          <div class="chart-card">
+            <h3 class="chart-title">Industry Breakdown</h3>
+            <p class="chart-desc">Where alumni work by sector</p>
+            <div class="chart-container"><canvas id="industryChart"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <h3 class="chart-title">Top Post-Graduation Skills</h3>
+            <p class="chart-desc">Most acquired skills after leaving university</p>
+            <div class="chart-container"><canvas id="topSkillsChart"></canvas></div>
+          </div>
+        </div>
+
+        <!-- Charts row 2 -->
+        <div class="chart-grid">
+          <div class="chart-card chart-wide">
+            <h3 class="chart-title">Certification Growth Over Time</h3>
+            <p class="chart-desc">Post-graduation certifications acquired per year by category</p>
+            <div class="chart-container"><canvas id="certTrendsChart"></canvas></div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ======================== SKILLS GAP SECTION ======================== -->
+      <section id="section-skills-gap" class="content-section" style="display:none">
+        <div class="section-intro">
+          <h3>Curriculum Skills Gap Analysis</h3>
+          <p>Skills alumni acquire <em>after</em> graduating - indicating gaps in the current curriculum.</p>
+        </div>
+
+        <div class="filter-bar">
+          <label>Filter by Programme:
+            <select id="programmeFilter">
+              <option value="">All Programmes</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="chart-grid">
+          <div class="chart-card">
+            <h3 class="chart-title">Skills Gap by Programme</h3>
+            <div class="chart-container"><canvas id="skillsGapBar"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <h3 class="chart-title">Gap Severity (Radar)</h3>
+            <div class="chart-container"><canvas id="skillsGapRadar"></canvas></div>
+          </div>
+        </div>
+
+        <!-- Colour-coded gap table -->
+        <div class="chart-card">
+          <h3 class="chart-title">Gap Severity Table</h3>
+          <div id="gapTable" class="table-container"></div>
+        </div>
+      </section>
+
+      <!-- ======================== CAREER PATHWAYS SECTION ======================== -->
+      <section id="section-career-pathways" class="content-section" style="display:none">
+        <div class="section-intro">
+          <h3>Career Pathway Analysis</h3>
+          <p>What industries alumni end up working in — revealing unexpected career pathways.</p>
+        </div>
+        <div class="chart-grid">
+          <div class="chart-card chart-wide">
+            <h3 class="chart-title">Industry Distribution per Programme</h3>
+            <div class="chart-container"><canvas id="careerChart"></canvas></div>
+          </div>
+        </div>
+        <div class="chart-grid">
+          <div class="chart-card">
+            <h3 class="chart-title">Employment by Graduation Year</h3>
+            <div class="chart-container"><canvas id="employmentYearChart"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <h3 class="chart-title">Career Pathway Doughnut</h3>
+            <div class="chart-container"><canvas id="careerDoughnut"></canvas></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================== CERTIFICATIONS SECTION ======================== -->
+      <section id="section-certifications" class="content-section" style="display:none">
+        <div class="section-intro">
+          <h3>Post-Graduation Certifications</h3>
+          <p>Professional certifications alumni complete independently after graduation.</p>
+        </div>
+        <div class="chart-grid">
+          <div class="chart-card chart-wide">
+            <h3 class="chart-title">Certification Trends Over Time (Line)</h3>
+            <div class="chart-container"><canvas id="certLineChart"></canvas></div>
+          </div>
+        </div>
+        <div class="chart-grid">
+          <div class="chart-card">
+            <h3 class="chart-title">Certifications by Category (Pie)</h3>
+            <div class="chart-container"><canvas id="certPieChart"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <h3 class="chart-title">Category Comparison (Bar)</h3>
+            <div class="chart-container"><canvas id="certBarChart"></canvas></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================== ALUMNI DIRECTORY SECTION ======================== -->
+      <section id="section-alumni" class="content-section" style="display:none">
+        <div class="filter-bar">
+          <label>Programme:
+            <select id="alumniProgrammeFilter"><option value="">All</option></select>
+          </label>
+          <label>Graduation Year:
+            <select id="alumniYearFilter"><option value="">All</option></select>
+          </label>
+          <label>Industry:
+            <select id="alumniIndustryFilter"><option value="">All</option></select>
+          </label>
+          <button class="btn btn-primary" id="applyAlumniFilter">Apply Filters</button>
+        </div>
+        <div id="alumniTable" class="table-container"></div>
+        <div class="pagination" id="alumniPagination"></div>
+      </section>
+
+      <!-- ======================== API KEYS SECTION ======================== -->
+      <section id="section-api-keys" class="content-section" style="display:none">
+        <div class="section-intro">
+          <h3>API Key Management</h3>
+          <p>Manage scoped API keys for different client applications. Each key only has access to its permitted endpoints.</p>
+        </div>
+        <div id="apiKeysList" class="table-container"></div>
+
+        <div class="chart-card" style="margin-top:1.5rem">
+          <h3 class="chart-title">API Usage Statistics</h3>
+          <div class="chart-container"><canvas id="apiUsageChart"></canvas></div>
+        </div>
+      </section>
+
+    </div><!-- /dashboard -->
+  </main>
+
+  <script src="js/api.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/dashboard.js"></script>
+</body>
+</html>
